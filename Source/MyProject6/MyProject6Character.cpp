@@ -96,6 +96,9 @@ AMyProject6Character::AMyProject6Character()
 	bReplicates = true;
 
 	acceptsMoveRightCommands = true;
+	isSliding = false;
+	isMovingLaterally = false;
+	mayDoubleJump = true;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -108,9 +111,9 @@ void AMyProject6Character::UpdateAnimation()
 
 	// Are we moving or standing still?
 	UPaperFlipbook* DesiredAnimation;
-	if (CharacterMovement->IsFalling() == true) {
+	if (GetCharacterMovement()->IsFalling() == true) {
 		DesiredAnimation = (PlayerVelocity.Z < 0) ? FollowThroughJumpAnimation : BeginJumpAnimation;
-	} else if (PlayerSpeed > 0.0f)
+	} else if (isMovingLaterally && !GetCharacterMovement()->IsFalling())
 	{
 		DesiredAnimation = RunningAnimation;
 	}
@@ -138,8 +141,13 @@ void AMyProject6Character::Tick(float DeltaSeconds)
 void AMyProject6Character::SetupPlayerInputComponent(class UInputComponent* InputComponent)
 {
 	// Note: the 'Jump' action and the 'MoveRight' axis are bound to actual keys/buttons/sticks in DefaultInput.ini (editable from Project Settings..Input)
-	InputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
-	InputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+	InputComponent->BindAction("Jump", IE_Pressed, this, &AMyProject6Character::Jump);
+	InputComponent->BindAction("Jump", IE_Released, this, &AMyProject6Character::StopJumping);
+	InputComponent->BindAction("Slide", IE_Pressed, this, &AMyProject6Character::startSliding);
+	InputComponent->BindAction("Slide", IE_Released, this, &AMyProject6Character::stopSliding);
+	InputComponent->BindAction("Grapple", IE_Pressed, this, &AMyProject6Character::startGrappling);
+	InputComponent->BindAction("Grapple", IE_Released, this, &AMyProject6Character::stopGrappling);
+	InputComponent->BindAction("UseItem", IE_Released, this, &AMyProject6Character::useItem);
 	InputComponent->BindAxis("MoveRight", this, &AMyProject6Character::MoveRight);
 
 	InputComponent->BindTouch(IE_Pressed, this, &AMyProject6Character::TouchStarted);
@@ -151,12 +159,44 @@ void AMyProject6Character::MoveRight(float Value)
 	/*UpdateChar();*/
 
 	// Apply the input to the character motion
-	AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value);
+	if (acceptsMoveRightCommands && Value != 0) {
+		
+		isMovingLaterally = true;
+		AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value);
+	} else {
+		isMovingLaterally = false;
+
+	}
+}
+
+void AMyProject6Character::Jump()
+{
+	UE_LOG(LogTemp, Warning, TEXT("jump called"));
+	if (GetCharacterMovement()->IsFalling()) {
+		UE_LOG(LogTemp, Warning, TEXT("falling"));
+		if (mayDoubleJump == true) {
+			UE_LOG(LogTemp, Warning, TEXT("may double jump was true"));
+
+			APaperCharacter::Jump();
+			mayDoubleJump = false;
+		}
+	}
+	else {
+		UE_LOG(LogTemp, Warning, TEXT("not falling"));
+		mayDoubleJump = true;
+		APaperCharacter::Jump();
+	}
+} 
+
+void AMyProject6Character::doubleJump()
+{
+
 }
 
 void AMyProject6Character::startSliding()
 {
 	acceptsMoveRightCommands = false;
+	isMovingLaterally = false;
 	isSliding = true;
 	// todo: implement slide animation and hit box change
 }
@@ -166,6 +206,20 @@ void AMyProject6Character::stopSliding()
 	acceptsMoveRightCommands = true;
 	isSliding = true;
 	// todo: implement slide animation exit and hit box change
+}
+
+void AMyProject6Character::startGrappling()
+{
+}
+
+void AMyProject6Character::stopGrappling()
+{
+
+}
+
+void AMyProject6Character::useItem()
+{
+
 }
 
 void AMyProject6Character::TouchStarted(const ETouchIndex::Type FingerIndex, const FVector Location)

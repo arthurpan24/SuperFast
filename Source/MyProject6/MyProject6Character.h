@@ -49,8 +49,14 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Controls)
 	bool acceptsMoveRightCommands;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
 	bool isSliding;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
+	bool isMovingLaterally;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Movement)
+	bool mayDoubleJump;
 
 	/** Called to choose the correct animation to play based on the character's movement state */
 	void UpdateAnimation();
@@ -58,8 +64,16 @@ protected:
 	/** Called for side to side input */
 	void MoveRight(float Value);
 
+	//virtual void Jump() override;
+	void doubleJump();
+
 	void startSliding();
 	void stopSliding();
+
+	void startGrappling();
+	void stopGrappling();
+
+	void useItem();
 
 	void UpdateCharacter();
 
